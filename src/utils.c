@@ -90,8 +90,6 @@ void call_command(char *raw_string)
     
     char *command[MAX_ARG] = {NULL};
     int i = 0;
-    
-    // printf("%s\t%d\n", processed_string, command_count);
 
     // tokenising the commands for individual execution
     char *token;
@@ -109,7 +107,7 @@ void call_command(char *raw_string)
     free(processed_string);
 }
 
-// processing the raw string to remove tabs, extra space, trailing space, newline and empty commands
+// processing the raw string to remove tabs, extra space, trailing space, newline, ampersand and empty commands
 int process_raw_string(char *raw_string, char* processed_string)
 {
     char *temp = malloc(MAX_COMMAND);
@@ -135,8 +133,6 @@ int process_raw_string(char *raw_string, char* processed_string)
                 j--;
             else
             {
-                // temp[j] = ' ';
-                // j++;
                 temp[j] = ';';
                 count ++;           // counting the total number of commands
             }
@@ -147,8 +143,6 @@ int process_raw_string(char *raw_string, char* processed_string)
                 j--;
             else
             {
-                // temp[j] = ' ';
-                // j++;
                 temp[j] = ';';
                 count++;            // counting the total number of commands
             }
@@ -218,7 +212,7 @@ void dispatch(char *command, char *args[])
 
 }
 
-
+// handles commands that are not inbuilt
 void other_command(char *command, char *args[])
 {
     int back_flag = 0;
@@ -253,7 +247,7 @@ void other_command(char *command, char *args[])
         exec_fore(all_together);
 }
 
-
+// gets content from history file (~/.hash_history)
 void get_history()
 {
     FILE *hist_file= fopen(HIST_LOC, "a+");
@@ -280,7 +274,7 @@ void get_history()
     fclose(hist_file);
 }
 
-
+// writes content to history file (~/.hash_history)
 void add_history(char *command)
 {
     if (HIST_SIZE!=0 && strcmp(command, HIST[HIST_SIZE-1]) == 0)
