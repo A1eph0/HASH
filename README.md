@@ -6,6 +6,7 @@
 > And in salvation bind them.
 > In the bright land of Linux,
 > Where the hackers play."
+
 ~ J. Scott Thayer (with apologies to J.R.R. Tolkien)
 
 <img src="https://cdn.discordapp.com/attachments/880398206817685514/888392812696076348/unknown.png">
