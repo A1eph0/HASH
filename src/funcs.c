@@ -333,7 +333,16 @@ int long_ls(char *path, int all_flag, int print_path_flag)
 
             printf("%s \t", time_str);
 
-            printf("%s\n", directory_path->d_name);
+            printf("%s", directory_path->d_name);
+
+            if(S_ISLNK(file_stat.st_mode))
+            {
+                char temp[MAX_LOC]="";
+                realpath(file, temp);
+                printf(" -> %s\n", temp);
+            }
+            else
+                printf("\n");
 
         }
     }
