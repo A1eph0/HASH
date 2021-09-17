@@ -435,9 +435,9 @@ void exit_print()
     }
 
     if (WIFEXITED(status))
-        printf("with pid %d ended normally\n", pid);
+        printf("\nProcess with pid %d ended normally\n", pid);
     else
-        printf("with pid %d ended abnormally\n", pid);
+        printf("\nProcess with pid %d ended abnormally\n", pid);
 }
 
 void exec_back(char *args[])
