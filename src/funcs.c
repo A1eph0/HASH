@@ -423,8 +423,26 @@ void print_permissions(mode_t st_mode)
     printf("%s \t", temp);
 }
 
+void exit_print()
+{
+    int status;
+    pid_t pid = waitpid(-1, &status, WNOHANG);
+    
+    if ( pid < 0)
+    {
+        perror("");
+        return;
+    }
+
+    if (WIFEXITED(status))
+        printf("with pid %d ended normally\n", pid);
+    else
+        printf("with pid %d ended abnormally\n", pid);
+}
+
 void exec_back(char *args[])
 {
+    signal(SIGCHLD, exit_print);
     pid_t pid = fork();
     if (pid < 0)
     {
