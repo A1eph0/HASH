@@ -10,7 +10,7 @@ extern int HIST_SIZE;
 // clears the screen
 void clear()
 {
-    printf("\e[1;1H\e[2J");
+    printf("\033c");
 }
 
 // prints the prompt string
@@ -281,6 +281,8 @@ void get_history()
 
 void add_history(char *command)
 {
+    if (HIST_SIZE!=0 && strcmp(command, HIST[HIST_SIZE-1]) == 0)
+        return;
     if(HIST_SIZE < MAX_HIST)
     {
         strcpy(HIST[HIST_SIZE], command);

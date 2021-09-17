@@ -552,8 +552,6 @@ void pinfo(char *args[])
 
 void history(char *args[])
 {
-    if (args[0] == HIST[HIST_SIZE-1])
-        return;
     int temp = HIST_SIZE;
     if(args[0] != NULL)
         temp = atoi(args[0]);
