@@ -78,9 +78,10 @@ void ls(char *args[])
 {
     char *files[MAX_ARG]={NULL};
     char temp[MAX_LOC];
-    int all_flag = 0, long_flag = 0;
+    int all_flag = 0, long_flag = 0;    // intiating the flags
     int j = 0;
     
+    // searching for flags
     for (int i=0; i<MAX_ARG; i++)
     {
         if (args[i] == NULL)
@@ -99,22 +100,13 @@ void ls(char *args[])
         }
 
         else
-        {
-            // printf("here");
-            // if (args[i][0] == '~')
-            // {
-            //     strcpy(temp, START_LOC);
-            //     strcat(temp, args[i]+1);
-            // }
-            // else 
-            //     strcpy(temp, args[i]);
-            
+        {   
             files[j] = args[i];
             j++;
         }
-        // printf("%s", args[i]);
     }
     
+    // if no file or directory is given as arguement
     if (files[0] == NULL)
     {       
         files[0] = ".";
@@ -123,6 +115,7 @@ void ls(char *args[])
 
     int print_path_flag = 0;
 
+    // flag for printing file path if there are multiple directories
     if (j>1)
         print_path_flag = 1;
 
@@ -158,13 +151,14 @@ void ls(char *args[])
 // plain ls implementation
 int plain_ls(char *path, int all_flag, int print_path_flag)
 {
-    if (print_path_flag)
+    if (print_path_flag)        // prints filepath directory path if multiple are given as arguement
         printf("%s:\n", path);
     struct dirent *directory_path;
     DIR *directory = opendir(path);
 
     if (directory == 0)
-    {
+    {   
+        // if it is not a directory, check whether it is a file
         FILE *file;
         if ((file = fopen(path, "r")) == NULL)     
         {
@@ -191,7 +185,7 @@ int plain_ls(char *path, int all_flag, int print_path_flag)
 // long ls implementation
 int long_ls(char *path, int all_flag, int print_path_flag)
 {
-    if (print_path_flag)
+    if (print_path_flag)            // prints filepath directory path if multiple are given as arguement
         printf("%s:\n", path);
 
     struct dirent *directory_path;
@@ -199,6 +193,7 @@ int long_ls(char *path, int all_flag, int print_path_flag)
 
     if (directory == 0)
     {
+        // if it is not a directory, check whether it is a file
         FILE *file;
         if ((file = fopen(path, "r")) == NULL)     
         {
@@ -214,7 +209,7 @@ int long_ls(char *path, int all_flag, int print_path_flag)
             if (lstat(path, &file_stat))
                 perror("");
             
-            print_permissions(file_stat.st_mode);
+            print_permissions(file_stat.st_mode);   // prints the file permissions
             printf("%lu \t", file_stat.st_nlink);
             printf("%s \t", getpwuid(file_stat.st_uid)->pw_name);
             printf("%s \t", getgrgid(file_stat.st_gid)->gr_name);
@@ -268,7 +263,7 @@ int long_ls(char *path, int all_flag, int print_path_flag)
         }
     }
 
-    calculate_total(path, all_flag);
+    calculate_total(path, all_flag);    // calculates total block
 
 
     while ((directory_path = readdir(directory)) != NULL)
@@ -285,7 +280,7 @@ int long_ls(char *path, int all_flag, int print_path_flag)
             if (lstat(file, &file_stat))
                 perror("");
             
-            print_permissions(file_stat.st_mode);
+            print_permissions(file_stat.st_mode);       // prints file permissons
             printf("%lu \t", file_stat.st_nlink);
             printf("%s \t", getpwuid(file_stat.st_uid)->pw_name);
             printf("%s \t", getgrgid(file_stat.st_gid)->gr_name);
@@ -302,7 +297,6 @@ int long_ls(char *path, int all_flag, int print_path_flag)
             if(difftime(mktime(localtime(&curr_time)),mktime(localtime(&(file_stat.st_mtime)))) < 0 || difftime(mktime(localtime(&curr_time)),mktime(localtime(&(file_stat.st_mtime)))) > 15778476)
                 format_flag = 1;
             
-
             char *token;
             token = strtok(temp, " ");
             int i = 0;
@@ -335,6 +329,7 @@ int long_ls(char *path, int all_flag, int print_path_flag)
 
             printf("%s", directory_path->d_name);
 
+            // prints the actual path if symbolic link
             if(S_ISLNK(file_stat.st_mode))
             {
                 char temp[MAX_LOC]="";
@@ -351,6 +346,7 @@ int long_ls(char *path, int all_flag, int print_path_flag)
     closedir(directory);
 }
 
+// calculates the total block value
 int calculate_total(char * path, int all_flag)
 {
     struct dirent *directory_path;
@@ -380,6 +376,7 @@ int calculate_total(char * path, int all_flag)
     closedir(directory);
 }
 
+// print permissions for ls -l command
 void print_permissions(mode_t st_mode)
 {
     char temp[] = " ---------";
@@ -423,6 +420,7 @@ void print_permissions(mode_t st_mode)
     printf("%s \t", temp);
 }
 
+// prints exit message for background process
 void exit_print()
 {
     int status;
@@ -440,6 +438,7 @@ void exit_print()
         printf("\nProcess with pid %d ended abnormally\n", pid);
 }
 
+// executes background commands
 void exec_back(char *args[])
 {
     signal(SIGCHLD, exit_print);
@@ -463,6 +462,7 @@ void exec_back(char *args[])
     printf("\n\n");
 }
 
+// executes foreground commands
 void exec_fore(char *args[])
 {
     pid_t pid = fork();
@@ -487,12 +487,13 @@ void exec_fore(char *args[])
     }
 }
 
+// implementation of pinfo command
 void pinfo(char *args[])
 {
     pid_t pid;
     int flag = 0;
 
-    if (args[0] != NULL)
+    if (args[0] != NULL)    // if no pid is provided
     {
         pid = atoi(args[0]);
         if (pid == getpid())
@@ -506,9 +507,8 @@ void pinfo(char *args[])
     printf("pid -- %d\n", pid);
 
     char status_path[MAX_LOC];
-    sprintf(status_path, "/proc/%d/stat", pid);
-    
-
+    sprintf(status_path, "/proc/%d/stat", pid);     // path to stat file (/proc/pid/stat)
+        
     FILE *status = fopen(status_path, "r");
     if (status == NULL)
     {
@@ -539,7 +539,7 @@ void pinfo(char *args[])
         j++;
     }
 
-    sprintf(status_path, "/proc/%d/exe", pid);
+    sprintf(status_path, "/proc/%d/exe", pid);       // path to exe symbolic link file (/proc/pid/exe)
     char exec_path[MAX_LOC];
     
     if(readlink(status_path, exec_path, MAX_LOC) == -1)
@@ -550,6 +550,7 @@ void pinfo(char *args[])
     printf("Executable Path -- %s\n", exec_path);
 }
 
+// implementation of history command
 void history(char *args[])
 {
     int temp = HIST_SIZE;

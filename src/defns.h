@@ -36,7 +36,7 @@
    \033[0;0m\n\
 "
 
-
+// spme macros used throughout the code
 #define MAX_ARG (int) (100)
 #define MAX_COMMAND  (int) (2 << 15)
 #define MAX_HIST (int) (20)

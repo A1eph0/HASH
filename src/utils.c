@@ -218,6 +218,7 @@ void dispatch(char *command, char *args[])
 
 }
 
+
 void other_command(char *command, char *args[])
 {
     int back_flag = 0;
@@ -278,6 +279,7 @@ void get_history()
 
     fclose(hist_file);
 }
+
 
 void add_history(char *command)
 {
