@@ -1,4 +1,4 @@
-# Hrishi's Arbitary SHell (HASH): a functional shell implementation
+# Hrishi's Arbitrary SHell (HASH): a functional shell implementation
 
 
 > "One OS to rule them all,<br>
