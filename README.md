@@ -14,7 +14,7 @@
 
 # About
 
-**H**rish's **A**rbitary **SH**ell (**HASH**) is a functional implementation of a shell for Linux based systems. Coded completely in C language, the shell replicates the basic functionality of other popular shells like Bash and Zsh. 
+**H**rish's **A**rbitrary **SH**ell (**HASH**) is a functional implementation of a shell for Linux based systems. Coded completely in C language, the shell replicates the basic functionality of other popular shells like Bash and Zsh. 
 
 For instructions running the shell, click [here](#running-the-shell).
 
