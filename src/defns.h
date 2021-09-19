@@ -41,6 +41,7 @@
 #define MAX_COMMAND  (int) (2 << 15)
 #define MAX_HIST (int) (20)
 #define MAX_LOC (int) (10000)
+#define MAX_PID  (int) (2 << 20)
 
 #endif
 #endif

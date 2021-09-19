@@ -5,8 +5,9 @@
 char *START_LOC = NULL; // pointer for storing start location
 char PREV_LOC[MAX_LOC];  // pointer for storing prev location
 char HIST_LOC[MAX_LOC];  // pointer for storing history location
-char HIST[MAX_HIST+1][MAX_COMMAND];
+char HIST[MAX_HIST+1][MAX_COMMAND]; 
 int HIST_SIZE = 0;
+char *PROC_NAME[MAX_PID]={NULL};
 
 signed main()
 {

@@ -6,6 +6,7 @@ extern char *START_LOC;
 extern char PREV_LOC[];
 extern char HIST[MAX_HIST+1][MAX_COMMAND]; 
 extern int HIST_SIZE;
+extern char *PROC_NAME[];
 extern int errno;
 
 // implementation of the echo command
@@ -433,14 +434,17 @@ void exit_print()
     }
 
     if (WIFEXITED(status))
-        printf("\nProcess with pid %d ended normally\n", pid);
+        printf("\n%s with pid %d ended normally\n", PROC_NAME[pid], pid);
     else
-        printf("\nProcess with pid %d ended abnormally\n", pid);
+        printf("\n%s with pid %d ended abnormally\n", PROC_NAME[pid], pid);
+    
+    free(PROC_NAME[pid]);
 }
 
 // executes background commands
 void exec_back(char *args[])
 {
+    
     signal(SIGCHLD, exit_print);
     pid_t pid = fork();
     if (pid < 0)
@@ -454,8 +458,15 @@ void exec_back(char *args[])
         if (execvp(args[0], args))
         {
             printf("Command not found\n");
+            free(PROC_NAME[pid]);
             return;
         }
+    }
+    else
+    {
+        char *process_name = malloc(MAX_ARG);
+        strcpy(process_name, args[0]);
+        PROC_NAME[pid] = process_name;
     }
 
     printf("%d ", pid);
