@@ -96,6 +96,12 @@ In this section, we will explore the functionalities implemented in the shell in
 - Simalar to Foreground Processes except `waitpid()` is not used.
 - `signal()` is used to watch for the exit signal sent by the process and print the corresponding exit message
 
+# Assumptions 
+- Maximum number of argument `MAX_ARG` for any command will be 100;
+- Maximum input length`MAX_COMMAND` for any command will be $2^15$.
+- Maximum lenth of path `MAX_LOC` will be 10000.
+- Maximum `pid` value `MAX_PID` will be less than $2^20$.
+
 # Running the Shell
 Compile the shell from the parent directory and run the file as shown below:
 ```
