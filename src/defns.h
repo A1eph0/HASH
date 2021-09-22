@@ -31,7 +31,7 @@
    ██║  ██║██║  ██║███████║██║  ██║\n\
    ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝\n\
    \n\
-   Weclome to Hrishi's Arbitary SHell\n\
+   Weclome to Hrishi's Arbitrary SHell\n\
    © Hrishi Narayanan 2021\n\
    \033[0;0m\n\
 "
