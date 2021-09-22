@@ -13,5 +13,8 @@ void dispatch(char *command, char *args[]);                             // dispa
 void other_command(char *command, char *args[]);                        // handles commands that are not inbuilt
 void get_history();                                                     // gets content from history file (~/.hash_history)
 void add_history(char *command);                                        // writes content to history file (~/.hash_history)
+void handle_redirection(char *command, char *args[],\
+                         int i_flag, int o_flag,\
+                          char* i_file, char* o_file);
 
 #endif
