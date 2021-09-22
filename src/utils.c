@@ -166,6 +166,10 @@ int process_raw_string(char *raw_string, char* processed_string)
 // executes each tokenised command
 void exec_command(char *command_string)
 {
+    int inpt_flag = 0, outpt_flag = 0;
+    int bckup_stdout, bckup_stdin;
+    char file[MAX_LOC] = "";
+
     char *token;
     token = strtok(command_string, " ");
     
@@ -177,12 +181,36 @@ void exec_command(char *command_string)
     int i = 0;
     while(token != NULL && i < MAX_ARG)
     {
-        args[i] = token;
+        if(strcmp(token, "<") == 0)
+            inpt_flag = 1;
+        else if(strcmp(token, ">") == 0)
+            outpt_flag = 1;
+        else if(strcmp(token, ">>") == 0)
+            outpt_flag = 2;
+        else if(strcmp(token, "<>") == 0)
+            break;
+        else   
+            args[i] = token;
+
         token = strtok(NULL, " ");
+
+        if(inpt_flag != 0 || outpt_flag != 0)
+        {   
+            if(token[0] == '~')
+            {
+                strcpy(file, START_LOC);
+                token++;
+            }
+            strcat(file, token);
+            break;
+        }
+
         i++;
     }
 
-    dispatch(command, args);
+    // printf("file: %s \t in: %d \t out: %d\n", file, inpt_flag, outpt_flag);
+
+    // dispatch(command, args);
 }
 
 // dispatches the function calls for the commands
