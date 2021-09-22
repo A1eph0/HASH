@@ -88,7 +88,7 @@ void call_command(char *raw_string)
     char *processed_string = malloc(MAX_COMMAND);
     int command_count = process_raw_string(raw_string, processed_string);
     
-    printf("%s\n", processed_string);
+    // printf("%s\n", processed_string);
     char *command[MAX_ARG] = {NULL};
     int i = 0;
 
@@ -199,7 +199,6 @@ int process_raw_string(char *raw_string, char* processed_string)
 void exec_command(char *command_string)
 {
     int i_flag = 0, o_flag = 0;
-    int bckup_stdout, bckup_stdin;
     char i_file[MAX_LOC] = "";
     char o_file[MAX_LOC] = "";
 
@@ -225,8 +224,15 @@ void exec_command(char *command_string)
                 continue;
             }
             else
-                strcpy(i_file, token);
-            i++;
+            {
+                if(token[0] == '~')
+                {
+                    strcpy(i_file, START_LOC);
+                    token++;
+                }
+                strcat(i_file, token);
+                i++;
+            }
         }
         else if(strcmp(token, ">") == 0)
             o_flag = 1;
@@ -382,6 +388,54 @@ void add_history(char *command)
 
 void handle_redirection(char *command, char *args[], int i_flag, int o_flag, char* i_file, char* o_file)
 {
-    int bckup_stdout, bckup_stdin;
-    printf("%s\t%d\t%d\t%s\t%s",command, i_flag, o_flag, i_file, o_file);
+    int backup_stdout = dup(STDOUT_FILENO), backup_stdin = dup(STDIN_FILENO);
+    int i_pointer, o_pointer;
+
+    printf("%s\t%d\t%d\t%s\t%s\n",command, i_flag, o_flag, i_file, o_file);
+    
+    if (i_flag)
+    {
+        i_pointer = open(i_file, O_RDONLY);
+        if (i_pointer < 0)
+        {
+            perror("");
+            return;
+        }
+        if (dup2(i_pointer, STDIN_FILENO) == -1)
+        {
+            dup2(backup_stdin, STDIN_FILENO);
+            perror("");
+            return;
+        }
+    }
+
+    if (o_flag)
+    {
+        int app_trunc_flag = O_TRUNC;
+        
+        if(o_flag == 2)
+            app_trunc_flag = O_APPEND;
+
+        o_pointer = open(o_file, O_CREAT | O_WRONLY | app_trunc_flag, FILE_PERM);
+        if (o_pointer < 0)
+        {
+            perror("");
+            return;
+        }
+        if (dup2(o_pointer, STDOUT_FILENO) == -1)
+        {
+            perror("");
+            return;
+        }
+    }
+
+    dispatch(command, args);
+    
+    if(i_flag)
+        close(i_pointer);
+    if(o_file)
+        close(o_pointer);
+
+    dup2(backup_stdin, STDIN_FILENO);
+    dup2(backup_stdout, STDOUT_FILENO);
 }
