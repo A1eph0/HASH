@@ -88,6 +88,7 @@ void call_command(char *raw_string)
     char *processed_string = malloc(MAX_COMMAND);
     int command_count = process_raw_string(raw_string, processed_string);
     
+    printf("%s\n", processed_string);
     char *command[MAX_ARG] = {NULL};
     int i = 0;
 
@@ -154,10 +155,41 @@ int process_raw_string(char *raw_string, char* processed_string)
             temp[j] = ';';
             count++;
         }
+        else if (raw_string[i] == '>')
+        {
+            if(temp[j-1] != '>' && temp[j-1] != ' ')
+            {
+                temp[j] = ' ';
+                j++;
+            }
+            temp[j] = raw_string[i];
+            if(raw_string[i+1]!='>' && raw_string[i+1]!=' ' && raw_string[i+1]!=';' && raw_string[i+1]!='\n' && raw_string[i+1]!='\t')
+            {
+                j++;
+                temp[j] = ' ';
+            }
+        }
+        else if (raw_string[i] == '<')
+        {
+            if(temp[j-1] != ' ')
+            {
+                temp[j] = ' ';
+                j++;
+            }
+            temp[j] = raw_string[i];
+            if(raw_string[i+1]!=' ' && raw_string[i+1]!=';' && raw_string[i+1]!='\n' && raw_string[i+1]!='\t')
+            {
+                j++;
+                temp[j] = ' ';
+            }
+        }
         else
             temp[j] = raw_string[i];
     }
 
+    j++;
+    if(j !=0 && temp[j-1]!='\0')
+        temp[j] = '\0';
     strcpy(processed_string, temp);
     free(temp);
     return count;
@@ -166,9 +198,10 @@ int process_raw_string(char *raw_string, char* processed_string)
 // executes each tokenised command
 void exec_command(char *command_string)
 {
-    int inpt_flag = 0, outpt_flag = 0;
+    int i_flag = 0, o_flag = 0;
     int bckup_stdout, bckup_stdin;
-    char file[MAX_LOC] = "";
+    char i_file[MAX_LOC] = "";
+    char o_file[MAX_LOC] = "";
 
     char *token;
     token = strtok(command_string, " ");
@@ -181,36 +214,49 @@ void exec_command(char *command_string)
     int i = 0;
     while(token != NULL && i < MAX_ARG)
     {
-        if(strcmp(token, "<") == 0)
-            inpt_flag = 1;
+        if(i_flag == 0 && strcmp(token, "<") == 0)
+        {
+            i_flag = 1;
+            token = strtok(NULL, " ");
+
+            if( token == NULL || strcmp(token, ">") == 0 || strcmp(token, ">>") == 0)
+            {
+                i++;
+                continue;
+            }
+            else
+                strcpy(i_file, token);
+            i++;
+        }
         else if(strcmp(token, ">") == 0)
-            outpt_flag = 1;
+            o_flag = 1;
         else if(strcmp(token, ">>") == 0)
-            outpt_flag = 2;
-        else if(strcmp(token, "<>") == 0)
-            break;
+            o_flag = 2;
         else   
             args[i] = token;
 
         token = strtok(NULL, " ");
 
-        if(inpt_flag != 0 || outpt_flag != 0)
+        if(token != NULL && o_flag != 0)
         {   
             if(token[0] == '~')
             {
-                strcpy(file, START_LOC);
+                strcpy(o_file, START_LOC);
                 token++;
             }
-            strcat(file, token);
+            strcat(o_file, token);
             break;
         }
 
         i++;
     }
 
-    // printf("file: %s \t in: %d \t out: %d\n", file, inpt_flag, outpt_flag);
+    // printf("out_file: %s \t in_file: %s \t in: %d \t out: %d\n", o_file, i_file, i_flag, o_flag);
 
-    // dispatch(command, args);
+    if(i_flag == 0 && o_flag == 0)
+        dispatch(command, args);
+    else
+        handle_redirection(command, args, i_flag, o_flag, i_file, o_file);
 }
 
 // dispatches the function calls for the commands
@@ -332,4 +378,10 @@ void add_history(char *command)
             perror("error while writing history");
     
     fclose(hist_file);
+}
+
+void handle_redirection(char *command, char *args[], int i_flag, int o_flag, char* i_file, char* o_file)
+{
+    int bckup_stdout, bckup_stdin;
+    printf("%s\t%d\t%d\t%s\t%s",command, i_flag, o_flag, i_file, o_file);
 }
