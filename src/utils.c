@@ -86,9 +86,9 @@ void call_command(char *raw_string)
 {
     add_history(raw_string);
     char *processed_string = malloc(MAX_COMMAND);
-    int command_count = process_raw_string(raw_string, processed_string);
+    int command_count = process_raw_string(raw_string, processed_string, ';');
     
-    // printf("%s\n", processed_string);
+    // fprintf(stderr,"%s\n", processed_string);
     char *command[MAX_ARG] = {NULL};
     int i = 0;
 
@@ -103,13 +103,14 @@ void call_command(char *raw_string)
     }
     
     for (i = 0; i < command_count; i++)
+        // handle_pipes(command[i]);
         exec_command(command[i]);
     
     free(processed_string);
 }
 
 // processing the raw string to remove tabs, extra space, trailing space, newline, ampersand and empty commands
-int process_raw_string(char *raw_string, char* processed_string)
+int process_raw_string(char *raw_string, char* processed_string, char delim)
 {
     char *temp = malloc(MAX_COMMAND);
     int count = 0;
@@ -119,32 +120,32 @@ int process_raw_string(char *raw_string, char* processed_string)
     {
         j++;
 
-        if (raw_string[i]==' ' && (j == 0 || raw_string[i+1] == ' ' || raw_string[i+1] == '\t' || raw_string[i+1] == '\n' || raw_string[i+1] == ';' || temp[j-1] == ';'))
+        if (raw_string[i]==' ' && (j == 0 || raw_string[i+1] == ' ' || raw_string[i+1] == '\t' || raw_string[i+1] == '\n' || raw_string[i+1] == delim || temp[j-1] == delim))
             j--;
         else if (raw_string[i] == '\t')
         {
-            if (j == 0 || raw_string[i+1] == ' ' || raw_string[i+1] == '\t' || raw_string[i+1] == '\n' || raw_string[i+1] == ';' || temp[j-1] == ';')
+            if (j == 0 || raw_string[i+1] == ' ' || raw_string[i+1] == '\t' || raw_string[i+1] == '\n' || raw_string[i+1] == delim || temp[j-1] == delim)
                 j--;
             else
                 temp[j] = ' ';
         }
         else if (raw_string[i] == '\n')
         {
-            if (j == 0 || temp[j-1] == ';')
+            if (j == 0 || temp[j-1] == delim)
                 j--;
             else
             {
-                temp[j] = ';';
+                temp[j] = delim;
                 count ++;           // counting the total number of commands
             }
         }
-        else if (raw_string[i] == ';')
+        else if (raw_string[i] == delim)
         {
-            if (j == 0 || temp[j-1] == ';')
+            if (j == 0 || temp[j-1] == delim)
                 j--;
             else
             {
-                temp[j] = ';';
+                temp[j] = delim;
                 count++;            // counting the total number of commands
             }
         }
@@ -152,7 +153,7 @@ int process_raw_string(char *raw_string, char* processed_string)
         {
             temp[j] = raw_string[i];
             j++;
-            temp[j] = ';';
+            temp[j] = delim;
             count++;
         }
         else if (raw_string[i] == '>')
@@ -163,7 +164,7 @@ int process_raw_string(char *raw_string, char* processed_string)
                 j++;
             }
             temp[j] = raw_string[i];
-            if(raw_string[i+1]!='>' && raw_string[i+1]!=' ' && raw_string[i+1]!=';' && raw_string[i+1]!='\n' && raw_string[i+1]!='\t')
+            if(raw_string[i+1]!='>' && raw_string[i+1]!=' ' && raw_string[i+1]!=delim && raw_string[i+1]!='\n' && raw_string[i+1]!='\t')
             {
                 j++;
                 temp[j] = ' ';
@@ -177,7 +178,7 @@ int process_raw_string(char *raw_string, char* processed_string)
                 j++;
             }
             temp[j] = raw_string[i];
-            if(raw_string[i+1]!=' ' && raw_string[i+1]!=';' && raw_string[i+1]!='\n' && raw_string[i+1]!='\t')
+            if(raw_string[i+1]!=' ' && raw_string[i+1]!=delim && raw_string[i+1]!='\n' && raw_string[i+1]!='\t')
             {
                 j++;
                 temp[j] = ' ';
@@ -391,7 +392,7 @@ void handle_redirection(char *command, char *args[], int i_flag, int o_flag, cha
     int backup_stdout = dup(STDOUT_FILENO), backup_stdin = dup(STDIN_FILENO);
     int i_pointer, o_pointer;
 
-    printf("%s\t%d\t%d\t%s\t%s\n",command, i_flag, o_flag, i_file, o_file);
+    // printf("%s\t%d\t%d\t%s\t%s\n",command, i_flag, o_flag, i_file, o_file);
     
     if (i_flag)
     {
@@ -438,4 +439,85 @@ void handle_redirection(char *command, char *args[], int i_flag, int o_flag, cha
 
     dup2(backup_stdin, STDIN_FILENO);
     dup2(backup_stdout, STDOUT_FILENO);
+}
+
+void handle_pipes(char* raw_string)
+{
+    char *processed_string = malloc(MAX_COMMAND);
+    int backup_stdout = dup(STDOUT_FILENO), backup_stdin = dup(STDIN_FILENO);
+    int command_count = process_raw_string(raw_string, processed_string, '|') + 1;
+    
+    fprintf(stderr,"%d %s\n", command_count, processed_string);
+
+    if(command_count == 1)
+    {
+        exec_command(raw_string);
+        free(processed_string);
+        return;
+    }
+
+    char *command[MAX_ARG] = {NULL};
+    int i = 0;
+
+    // tokenising the commands for individual execution
+    char *token;
+    token = strtok(processed_string, "|");
+    
+    while(token != NULL)
+    {
+        command[i++] = token;
+        token = strtok(NULL, "|");
+    }
+
+    int file_desc[2 * (command_count-1)];
+
+    for(int i = 0; i < 2 *(command_count-1); i+=2)
+    {
+        if(pipe(file_desc+i))
+        {
+            perror("");
+            free(processed_string);
+            return;
+        }
+    }
+
+    fprintf(stderr,"command_count: %d\n", command_count);
+    for(int i = 0; i < command_count; i++)
+    {
+        fflush(stdin);
+        fflush(stdout);
+        pid_t pid = fork();
+        if (pid < 0)
+        {
+            perror("");
+            free(processed_string);
+            return;
+        }
+
+        else if (pid == 0)
+        {
+            if(i != 0)
+            {
+                dup2(file_desc[2*(command_count-1)-1-(2*i-1)], STDIN_FILENO);
+                close(file_desc[2*(command_count-1)-1-(2*i-1)]);
+            }
+            if(i != command_count-1)
+            {
+                dup2(file_desc[2*(command_count-1)-1-(2*i)], STDOUT_FILENO);
+                close(file_desc[2*(command_count-1)-1-(2*i)]);
+            }
+            exec_command(command[i]);
+            dup2(backup_stdin, STDOUT_FILENO);
+            dup2(backup_stdin, STDIN_FILENO);
+        }
+        else
+        {
+            int status;
+            waitpid(pid, &status, WUNTRACED);
+        }
+    }
+        
+    dup2(backup_stdin, STDOUT_FILENO);
+    dup2(backup_stdin, STDIN_FILENO);
+    free(processed_string);
 }
