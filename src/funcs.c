@@ -7,7 +7,17 @@ extern char PREV_LOC[];
 extern char HIST[MAX_HIST+1][MAX_COMMAND]; 
 extern int HIST_SIZE;
 extern char *PROC_NAME[];
+extern int JOB_NUM[];
+extern int JOB_VAL;
 extern int errno;
+
+int cmp(const void* a, const void* b)
+{
+    int pid_a = *(const int *)a;
+    int pid_b = *(const int *)b;
+
+    return (strcmp(PROC_NAME[pid_a], PROC_NAME[pid_b]));
+}
 
 // implementation of the echo command
 void echo(char *args[])
@@ -439,12 +449,12 @@ void exit_print()
         printf("\n%s with pid %d ended abnormally\n", PROC_NAME[pid], pid);
     
     free(PROC_NAME[pid]);
+    PROC_NAME[pid] = NULL;
 }
 
 // executes background commands
 void exec_back(char *args[])
 {
-    
     signal(SIGCHLD, exit_print);
     pid_t pid = fork();
     if (pid < 0)
@@ -467,6 +477,8 @@ void exec_back(char *args[])
         char *process_name = malloc(MAX_ARG);
         strcpy(process_name, args[0]);
         PROC_NAME[pid] = process_name;
+        JOB_NUM[pid] = JOB_VAL;
+        JOB_VAL++;
     }
 
     printf("%d ", pid);
@@ -570,4 +582,69 @@ void history(char *args[])
 
     for(int i=0; i<temp; i++)
         printf("%s", HIST[i]);
+}
+
+void jobs(char *args[])
+{
+    int flag = 0;
+    if(args[0]!=NULL)
+    {
+        if(strcmp(args[0], "-r")==0)
+            flag = 1;
+        else if(strcmp(args[0], "-s")==0)
+            flag = 2;
+    }
+
+    pid_t all_proc[MAX_JOBS];
+    
+    int proc_count = 0;
+    for(pid_t i=0; i<MAX_PID; i++)
+    {
+        // fprintf(stderr, "%d %d", i, proc_count);
+        if(PROC_NAME[i]!=NULL)
+        {
+            all_proc[proc_count] = i;
+            proc_count++;
+        }
+    }
+
+    qsort(all_proc, proc_count, sizeof(pid_t), cmp);
+
+    for(int i=0; i<proc_count; i++)
+    {
+        pid_t pid = all_proc[i];
+
+        char status_path[MAX_LOC];
+        sprintf(status_path, "/proc/%d/stat", pid);     // path to stat file (/proc/pid/stat)
+            
+        FILE *status = fopen(status_path, "r");
+        if (status == NULL)
+        {
+            perror("");
+            return;
+        }
+
+        char file_stat[MAX_COMMAND];
+        fread(file_stat, MAX_COMMAND, 1, status);
+        fclose(status);
+
+        char *token = strtok(file_stat," ");
+        
+        int j = 0;
+        while(token != NULL)
+        {
+            if(j == 2)
+            {
+                if((strcmp(token, "S") == 0 || strcmp(token,"R") == 0) && flag !=2)
+                    printf("[%d] Running ", JOB_NUM[pid]);
+                else if(flag != 1)
+                    printf("[%d] Stopped ", JOB_NUM[pid]);
+                break;
+            }
+            token = strtok(NULL, " ");
+            j++;
+        }
+
+        printf("%s [%d]\n", PROC_NAME[pid], pid);
+    }
 }

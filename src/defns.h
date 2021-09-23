@@ -43,6 +43,7 @@
 #define MAX_LOC (int) (10000)
 #define MAX_PID  (int) (2 << 20)
 #define FILE_PERM 0644
+#define MAX_JOBS (int) (100000)
 
 #endif
 #endif

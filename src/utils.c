@@ -285,6 +285,8 @@ void dispatch(char *command, char *args[])
         pinfo(args);
     else if (strcmp(command, "history") == 0)
         history(args);
+    else if (strcmp(command, "jobs") == 0)
+        jobs(args);
     else if (strcmp(command, "repeat") == 0)
         for(int i=0; i<atoi(args[0]); i++)
             dispatch(args[1], args+2);
