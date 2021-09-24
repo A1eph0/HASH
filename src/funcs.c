@@ -10,6 +10,7 @@ extern char *PROC_NAME[];
 extern int JOB_NUM[];
 extern int JOB_VAL;
 extern pid_t JOB_PID[];
+extern int FORE_BACK[];
 extern int errno;
 
 int cmp(const void* a, const void* b)
@@ -444,13 +445,19 @@ void exit_print()
         return;
     }
 
-    if (WIFEXITED(status))
-        printf("\n%s with pid %d ended normally\n", PROC_NAME[pid], pid);
-    else
-        printf("\n%s with pid %d ended abnormally\n", PROC_NAME[pid], pid);
-    
-    free(PROC_NAME[pid]);
-    PROC_NAME[pid] = NULL;
+    if (FORE_BACK[pid] == 1)
+    {
+        if (WIFEXITED(status))
+            fprintf(stderr, "\n%s with pid %d ended normally\n", PROC_NAME[pid], pid);
+        else
+            fprintf(stderr, "\n%s with pid %d ended abnormally\n", PROC_NAME[pid], pid);
+    }
+
+    if(PROC_NAME[pid] != NULL)
+    {
+        free(PROC_NAME[pid]);
+        PROC_NAME[pid] = NULL;
+    }
     JOB_PID[JOB_NUM[pid]] = -1;
 }
 
@@ -469,7 +476,7 @@ void exec_back(char *args[])
     {
         if (execvp(args[0], args))
         {
-            printf("Command not found\n");
+            fprintf(stderr, "Command not found\n");
             free(PROC_NAME[pid]);
             return;
         }
@@ -480,8 +487,10 @@ void exec_back(char *args[])
         strcpy(process_name, args[0]);
         PROC_NAME[pid] = process_name;
         JOB_NUM[pid] = JOB_VAL;
+        FORE_BACK[pid] = 1;
         JOB_PID[JOB_VAL] = pid;
         JOB_VAL++;
+        kill(pid, SIGTSTP);
     }
 
     printf("%d ", pid);
@@ -491,6 +500,7 @@ void exec_back(char *args[])
 // executes foreground commands
 void exec_fore(char *args[])
 {
+    signal(SIGCHLD, exit_print);
     pid_t pid = fork();
     if (pid < 0)
     {
@@ -502,14 +512,25 @@ void exec_fore(char *args[])
     {
         if (execvp(args[0], args))
         {
-            printf("Command not found\n");
+            fprintf(stderr, "Command not found\n");
             return;
         }
     }
     else
     {
+        FORE_BACK[pid] = 0;
         int status;
-        waitpid(pid, &status, WUNTRACED);
+        if(waitpid(pid, &status, WUNTRACED) > 0 && WIFSTOPPED(status) != 0)
+        {
+            char *process_name = malloc(MAX_ARG);
+            strcpy(process_name, args[0]);
+            PROC_NAME[pid] = process_name;
+            JOB_NUM[pid] = JOB_VAL;
+            FORE_BACK[pid] = 1;
+            JOB_PID[JOB_VAL] = pid;
+            JOB_VAL++;
+            kill(pid, SIGTSTP);
+        }
     }
 }
 
@@ -689,3 +710,19 @@ void bg(char *args[])
 
     kill(pid, SIGCONT);
 }
+
+// void fg(char *args[])
+// {
+//     if(args[0] == NULL || atoi(args[0])>=JOB_VAL)
+//     {
+//         fprintf(stderr, "Invalid input");
+//         return;
+//     }
+
+//     pid_t pid = JOB_PID[atoi(args[0])];
+//     if(pid == -1)
+//     {
+//         fprintf(stderr, "Invalid input");
+//         return;
+//     }
+// }

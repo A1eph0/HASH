@@ -10,12 +10,13 @@ int HIST_SIZE = 0;
 char *PROC_NAME[MAX_PID]={NULL};
 int JOB_NUM[MAX_PID];
 pid_t JOB_PID[MAX_JOBS];
+int FORE_BACK[MAX_PID];
 int JOB_VAL = 1;
 
 signed main()
 {
     JOB_PID[0] = -1;
-    
+
     // clearing screen and printing welcome message
     clear();
     printf("%s", WELCOME);
