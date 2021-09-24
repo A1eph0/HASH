@@ -15,8 +15,8 @@ int JOB_VAL = 1;
 
 signed main()
 {
-    signal(SIGINT, int_handle);
-    signal(SIGTSTP, tstp_handle);
+    signal(SIGINT, SIG_IGN);
+    signal(SIGTSTP, SIG_IGN);
 
     JOB_PID[0] = -1;
 

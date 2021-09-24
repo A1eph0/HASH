@@ -454,6 +454,7 @@ void exit_print()
         prompt();
     }
     JOB_PID[JOB_NUM[pid]] = -1;
+    PROC_NAME[pid] = NULL;
     FORE_BACK[pid]==-1;
 }
 
@@ -470,6 +471,9 @@ void exec_back(char *args[])
 
     else if (pid == 0)
     {
+        signal(SIGINT, int_handle);
+        signal(SIGTSTP, tstp_handle);
+        setpgid(0,0);
         if (execvp(args[0], args))
         {
             fprintf(stderr, "Command not found\n");
@@ -506,6 +510,8 @@ void exec_fore(char *args[])
 
     else if (pid == 0)
     {
+        signal(SIGINT, int_handle);
+        signal(SIGTSTP, tstp_handle);
         if (execvp(args[0], args))
         {
             fprintf(stderr, "Command not found\n");
@@ -673,14 +679,14 @@ void sig(char *args[])
 {
     if(args[0] == NULL || args[1] == NULL || atoi(args[0]) >= JOB_VAL || atoi(args[1]) > 28)
     {
-        fprintf(stderr, "Invalid input");
+        fprintf(stderr, "Invalid inpu\n");
         return;
     }
 
     pid_t pid = JOB_PID[atoi(args[0])];
     if(pid == -1 || atoi(args[1])>31)
     {
-        fprintf(stderr, "Invalid input");
+        fprintf(stderr, "Invalid input\n");
         return;
     }
 
@@ -691,14 +697,14 @@ void bg(char *args[])
 {
     if(args[0] == NULL || atoi(args[0])>=JOB_VAL)
     {
-        fprintf(stderr, "Invalid input");
+        fprintf(stderr, "Invalid input\n");
         return;
     }
 
     pid_t pid = JOB_PID[atoi(args[0])];
     if(pid == -1)
     {
-        fprintf(stderr, "Invalid input");
+        fprintf(stderr, "Invalid input\n");
         return;
     }
 
@@ -709,17 +715,17 @@ void fg(char *args[])
 {
     if(args[0] == NULL || atoi(args[0])>=JOB_VAL)
     {
-        fprintf(stderr, "Invalid input");
+        fprintf(stderr, "Invalid input\n");
         return;
     }
 
     pid_t pid = JOB_PID[atoi(args[0])];
     if(pid == -1)
     {
-        fprintf(stderr, "Invalid input");
+        fprintf(stderr, "Invalid input\n");
         return;
     }
-
+    PROC_NAME[pid] = NULL;
     FORE_BACK[pid] = 0;
 
     signal(SIGTTOU, SIG_IGN);
@@ -729,8 +735,17 @@ void fg(char *args[])
     kill(pid, SIGCONT);
 
     int status;
-        if(waitpid(pid, &status, WUNTRACED) > 0 && WIFSTOPPED(status) != 0)
-            FORE_BACK[pid] = 1;
+    if(waitpid(pid, &status, WUNTRACED) > 0 && WIFSTOPPED(status) != 0)
+    {
+        char *process_name = malloc(MAX_ARG);
+        strcpy(process_name, args[0]);
+        PROC_NAME[pid] = process_name;
+        JOB_NUM[pid] = JOB_VAL;
+        FORE_BACK[pid] = 1;
+        JOB_PID[JOB_VAL] = pid;
+        JOB_VAL++;
+        // kill(pid, SIGTSTP);
+    }
 
     tcsetpgrp(STDIN_FILENO, getpgid(0));
 

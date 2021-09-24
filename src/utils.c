@@ -20,15 +20,17 @@ void int_handle()
         {
             kill(JOB_PID[i], SIGINT);
             FORE_BACK[JOB_PID[i]] = 1;
+            PROC_NAME[JOB_PID[i]] = NULL;
             return;
         }
     }
-    fprintf(stderr, "\n");
+
+    write(STDOUT_FILENO, "\n", 1);
+    prompt();
 }
 
 void tstp_handle()
 {
-    signal(SIGTSTP, SIG_IGN);
     for(int i =1; i < JOB_VAL; i++)
     {
         if(JOB_PID[i] != -1 && FORE_BACK[JOB_PID[i]] == 0)
@@ -38,7 +40,7 @@ void tstp_handle()
             return;
         }
     }
-    fprintf(stderr, "\n");
+    write(STDOUT_FILENO, "\n", 1);
 }
 
 // clears the screen
