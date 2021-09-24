@@ -9,6 +9,7 @@ extern int HIST_SIZE;
 extern char *PROC_NAME[];
 extern int JOB_NUM[];
 extern int JOB_VAL;
+extern pid_t JOB_PID[];
 extern int errno;
 
 int cmp(const void* a, const void* b)
@@ -450,6 +451,7 @@ void exit_print()
     
     free(PROC_NAME[pid]);
     PROC_NAME[pid] = NULL;
+    JOB_PID[JOB_NUM[pid]] = -1;
 }
 
 // executes background commands
@@ -478,6 +480,7 @@ void exec_back(char *args[])
         strcpy(process_name, args[0]);
         PROC_NAME[pid] = process_name;
         JOB_NUM[pid] = JOB_VAL;
+        JOB_PID[JOB_VAL] = pid;
         JOB_VAL++;
     }
 
@@ -647,4 +650,23 @@ void jobs(char *args[])
 
         printf("%s [%d]\n", PROC_NAME[pid], pid);
     }
+}
+
+
+void sig(char *args[])
+{
+    if(args[0] == NULL || args[1] == NULL || atoi(args[0]) >= JOB_VAL || atoi(args[1]) > 28)
+    {
+        fprintf(stderr, "Invalid input");
+        return;
+    }
+
+    pid_t pid = JOB_PID[atoi(args[0])];
+    if(pid == -1 || atoi(args[1])>31)
+    {
+        fprintf(stderr, "Invalid input");
+        return;
+    }
+
+    kill(pid, atoi(args[1]));
 }

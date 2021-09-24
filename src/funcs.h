@@ -15,5 +15,6 @@ void exec_fore(char *args[]);       // executes foreground commands
 void pinfo(char *args[]);           // implementation of pinfo command
 void history(char *args[]);         // implementation of history command
 void jobs(char *args[]);
+void sig(char *args[]);
 
 #endif
