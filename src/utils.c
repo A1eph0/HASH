@@ -14,33 +14,29 @@ extern int FORE_BACK[];
 
 void int_handle()
 {
+    write(STDOUT_FILENO, "\n", 1);
     for(int i =1; i < JOB_VAL; i++)
     {
         if(JOB_PID[i] != -1 && FORE_BACK[JOB_PID[i]] == 0)
         {
-            kill(JOB_PID[i], SIGINT);
             FORE_BACK[JOB_PID[i]] = 1;
             PROC_NAME[JOB_PID[i]] = NULL;
             return;
         }
     }
-
-    write(STDOUT_FILENO, "\n", 1);
-    prompt();
 }
 
 void tstp_handle()
 {
+    write(STDOUT_FILENO, "\n", 1);
     for(int i =1; i < JOB_VAL; i++)
     {
         if(JOB_PID[i] != -1 && FORE_BACK[JOB_PID[i]] == 0)
         {
-            kill(JOB_PID[i], SIGTSTP);
             FORE_BACK[JOB_PID[i]] = 1;
             return;
         }
-    }
-    write(STDOUT_FILENO, "\n", 1);
+    }  
 }
 
 // clears the screen
