@@ -670,3 +670,22 @@ void sig(char *args[])
 
     kill(pid, atoi(args[1]));
 }
+
+
+void bg(char *args[])
+{
+    if(args[0] == NULL || atoi(args[0])>=JOB_VAL)
+    {
+        fprintf(stderr, "Invalid input");
+        return;
+    }
+
+    pid_t pid = JOB_PID[atoi(args[0])];
+    if(pid == -1)
+    {
+        fprintf(stderr, "Invalid input");
+        return;
+    }
+
+    kill(pid, SIGCONT);
+}

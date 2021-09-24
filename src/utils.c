@@ -289,6 +289,8 @@ void dispatch(char *command, char *args[])
         jobs(args);
     else if (strcmp(command, "sig") == 0)
         sig(args);
+    else if (strcmp(command, "bg") == 0)
+        bg(args);
     else if (strcmp(command, "repeat") == 0)
         for(int i=0; i<atoi(args[0]); i++)
             dispatch(args[1], args+2);
