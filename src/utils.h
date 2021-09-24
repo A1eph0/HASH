@@ -1,6 +1,8 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+void int_handle();
+void tstp_handle();
 void clear();                                                                       // clears the screen
 void prompt();                                                                      // prints the prompt string
 void relative_path(char *path);                                                     // given a path, generates path relative to the starting location

@@ -438,12 +438,6 @@ void exit_print()
 {
     int status;
     pid_t pid = waitpid(-1, &status, WNOHANG);
-    
-    if ( pid < 0)
-    {
-        perror("");
-        return;
-    }
 
     if (FORE_BACK[pid] == 1)
     {
@@ -457,8 +451,10 @@ void exit_print()
     {
         free(PROC_NAME[pid]);
         PROC_NAME[pid] = NULL;
+        prompt();
     }
     JOB_PID[JOB_NUM[pid]] = -1;
+    FORE_BACK[pid]==-1;
 }
 
 // executes background commands
@@ -490,7 +486,7 @@ void exec_back(char *args[])
         FORE_BACK[pid] = 1;
         JOB_PID[JOB_VAL] = pid;
         JOB_VAL++;
-        kill(pid, SIGTSTP);
+        // kill(pid, SIGTSTP);
     }
 
     printf("%d ", pid);
@@ -529,7 +525,7 @@ void exec_fore(char *args[])
             FORE_BACK[pid] = 1;
             JOB_PID[JOB_VAL] = pid;
             JOB_VAL++;
-            kill(pid, SIGTSTP);
+            // kill(pid, SIGTSTP);
         }
     }
 }
@@ -673,7 +669,6 @@ void jobs(char *args[])
     }
 }
 
-
 void sig(char *args[])
 {
     if(args[0] == NULL || args[1] == NULL || atoi(args[0]) >= JOB_VAL || atoi(args[1]) > 28)
@@ -691,7 +686,6 @@ void sig(char *args[])
 
     kill(pid, atoi(args[1]));
 }
-
 
 void bg(char *args[])
 {
@@ -711,18 +705,35 @@ void bg(char *args[])
     kill(pid, SIGCONT);
 }
 
-// void fg(char *args[])
-// {
-//     if(args[0] == NULL || atoi(args[0])>=JOB_VAL)
-//     {
-//         fprintf(stderr, "Invalid input");
-//         return;
-//     }
+void fg(char *args[])
+{
+    if(args[0] == NULL || atoi(args[0])>=JOB_VAL)
+    {
+        fprintf(stderr, "Invalid input");
+        return;
+    }
 
-//     pid_t pid = JOB_PID[atoi(args[0])];
-//     if(pid == -1)
-//     {
-//         fprintf(stderr, "Invalid input");
-//         return;
-//     }
-// }
+    pid_t pid = JOB_PID[atoi(args[0])];
+    if(pid == -1)
+    {
+        fprintf(stderr, "Invalid input");
+        return;
+    }
+
+    FORE_BACK[pid] = 0;
+
+    signal(SIGTTOU, SIG_IGN);
+    signal(SIGTTIN, SIG_IGN);
+
+    tcsetpgrp(STDIN_FILENO, getpgid(pid));
+    kill(pid, SIGCONT);
+
+    int status;
+        if(waitpid(pid, &status, WUNTRACED) > 0 && WIFSTOPPED(status) != 0)
+            FORE_BACK[pid] = 1;
+
+    tcsetpgrp(STDIN_FILENO, getpgid(0));
+
+    signal(SIGTTOU, SIG_DFL);
+    signal(SIGTTIN, SIG_DFL);
+}

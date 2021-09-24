@@ -17,5 +17,6 @@ void history(char *args[]);         // implementation of history command
 void jobs(char *args[]);
 void sig(char *args[]);
 void bg(char *args[]);
+void fg(char *args[]);
 
 #endif

@@ -15,6 +15,9 @@ int JOB_VAL = 1;
 
 signed main()
 {
+    signal(SIGINT, int_handle);
+    signal(SIGTSTP, tstp_handle);
+
     JOB_PID[0] = -1;
 
     // clearing screen and printing welcome message
@@ -33,7 +36,7 @@ signed main()
     while(1)
     {
         get_history();
-        prompt(START_LOC);          // print prompt
+        prompt();                   // print prompt
         int flag = await_input();   // take input
         
         if (flag == -1)             // break if Ctrl+D (EOF) is received

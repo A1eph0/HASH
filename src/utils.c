@@ -6,6 +6,40 @@ extern char *START_LOC;
 extern char HIST_LOC[];
 extern char HIST[MAX_HIST+1][MAX_COMMAND]; 
 extern int HIST_SIZE;
+extern char *PROC_NAME[];
+extern int JOB_NUM[];
+extern int JOB_VAL;
+extern pid_t JOB_PID[];
+extern int FORE_BACK[];
+
+void int_handle()
+{
+    for(int i =1; i < JOB_VAL; i++)
+    {
+        if(JOB_PID[i] != -1 && FORE_BACK[JOB_PID[i]] == 0)
+        {
+            kill(JOB_PID[i], SIGINT);
+            FORE_BACK[JOB_PID[i]] = 1;
+            return;
+        }
+    }
+    fprintf(stderr, "\n");
+}
+
+void tstp_handle()
+{
+    signal(SIGTSTP, SIG_IGN);
+    for(int i =1; i < JOB_VAL; i++)
+    {
+        if(JOB_PID[i] != -1 && FORE_BACK[JOB_PID[i]] == 0)
+        {
+            kill(JOB_PID[i], SIGTSTP);
+            FORE_BACK[JOB_PID[i]] = 1;
+            return;
+        }
+    }
+    fprintf(stderr, "\n");
+}
 
 // clears the screen
 void clear()
@@ -25,6 +59,8 @@ void prompt()
     relative_path(path);   
     printf("\033[31;1m<\033[33;1m%s\033[35;1m@%s\033[37;1m:\033[36;1m%s\033[31;1m>\033[0;0m ", username, info.nodename, path);
     free(path);
+    fflush(stdin);
+    fflush(stdout);
 }
 
 // given a path, generates path relative to the starting location
@@ -291,6 +327,8 @@ void dispatch(char *command, char *args[])
         sig(args);
     else if (strcmp(command, "bg") == 0)
         bg(args);
+    else if (strcmp(command, "fg") == 0)
+        fg(args);
     else if (strcmp(command, "repeat") == 0)
         for(int i=0; i<atoi(args[0]); i++)
             dispatch(args[1], args+2);
