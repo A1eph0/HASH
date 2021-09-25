@@ -18,5 +18,6 @@ void jobs(char *args[]);
 void sig(char *args[]);
 void bg(char *args[]);
 void fg(char *args[]);
+void replay(char *args[]);
 
 #endif

@@ -333,6 +333,8 @@ void dispatch(char *command, char *args[])
         bg(args);
     else if (strcmp(command, "fg") == 0)
         fg(args);
+    else if (strcmp(command, "replay") == 0)
+        replay(args);
     else if (strcmp(command, "repeat") == 0)
         for(int i=0; i<atoi(args[0]); i++)
             dispatch(args[1], args+2);

@@ -745,3 +745,67 @@ void fg(char *args[])
     signal(SIGTTOU, SIG_DFL);
     signal(SIGTTIN, SIG_DFL);
 }
+
+void replay(char *args[])
+{
+    char *command[MAX_COMMAND] = {NULL};
+    int interval;
+    int period;
+
+    int command_flag = 0;
+    int interval_flag = 0;
+    int period_flag = 0;
+    int j=0;
+
+    for(int i =0; args[i]!=NULL; i++)
+    {
+        if(strcmp(args[i], "-command") == 0 && command_flag == 0)
+        {
+            command_flag = 1;
+            i++;
+            while(args[i]!=NULL)
+            {
+                if(strcmp(args[i], "-interval") == 0 || strcmp(args[i], "-period") == 0 )
+                {
+                    i--;
+                    break;
+                }
+                else
+                {
+                    command[j] = args[i];
+                    j++;
+                    i++;
+                }
+            }
+        }
+        else if(strcmp(args[i], "-interval") == 0 && interval_flag == 0)
+        {
+            interval_flag = 1;
+            i++;
+            if(args[i]!=NULL && strcmp(args[i], "-command") != 0 && strcmp(args[i], "-period") != 0 )
+                interval = atoi(args[i]);
+        }
+        else if(strcmp(args[i], "-period") == 0 && period_flag == 0)
+        {
+            period_flag = 1;
+            i++;
+            if(args[i]!=NULL && strcmp(args[i], "-command") != 0 && strcmp(args[i], "-interval") != 0 )
+                period = atoi(args[i]);
+        }
+    }
+
+    if(interval> period)
+        return;
+    
+    dispatch(command[0], command+1);
+    clock_t start = clock();
+    clock_t keep = start;
+    while(((double)(clock() - start)/CLOCKS_PER_SEC) - (double) (period - interval) < -0.0005)
+    {
+        if(((double)(clock() - keep)/CLOCKS_PER_SEC) - (double) interval < 0.0005 && ((double)(clock() - keep)/CLOCKS_PER_SEC) - (double) interval > -0000.5)
+        {
+            dispatch(command[0], command+1);
+            keep = clock();
+        }
+    }   
+}
