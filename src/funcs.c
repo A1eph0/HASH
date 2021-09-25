@@ -719,6 +719,8 @@ void fg(char *args[])
         fprintf(stderr, "Invalid input\n");
         return;
     }
+    char *process_name = malloc(MAX_ARG);
+    strcpy(process_name, PROC_NAME[pid]);
     PROC_NAME[pid] = NULL;
     FORE_BACK[pid] = 0;
 
@@ -731,8 +733,6 @@ void fg(char *args[])
     int status;
     if(waitpid(pid, &status, WUNTRACED) > 0 && WIFSTOPPED(status) != 0)
     {
-        char *process_name = malloc(MAX_ARG);
-        strcpy(process_name, args[0]);
         PROC_NAME[pid] = process_name;
         JOB_NUM[pid] = JOB_VAL;
         FORE_BACK[pid] = 1;
