@@ -12,11 +12,12 @@ int JOB_NUM[MAX_PID];
 pid_t JOB_PID[MAX_JOBS];
 int FORE_BACK[MAX_PID];
 int JOB_VAL = 1;
+int PROMPT_FL = 1;
 
 signed main()
 {
-    signal(SIGINT, SIG_IGN);
-    signal(SIGTSTP, SIG_IGN);
+    signal(SIGINT, int_handle);
+    signal(SIGTSTP, tstp_handle);
 
     JOB_PID[0] = -1;
 
@@ -35,6 +36,7 @@ signed main()
     // main loop for shell
     while(1)
     {
+        PROMPT_FL = 1;
         get_history();
         prompt();                   // print prompt
         int flag = await_input();   // take input

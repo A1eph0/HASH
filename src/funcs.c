@@ -471,8 +471,6 @@ void exec_back(char *args[])
 
     else if (pid == 0)
     {
-        signal(SIGINT, int_handle);
-        signal(SIGTSTP, tstp_handle);
         setpgid(0,0);
         if (execvp(args[0], args))
         {
@@ -490,7 +488,6 @@ void exec_back(char *args[])
         FORE_BACK[pid] = 1;
         JOB_PID[JOB_VAL] = pid;
         JOB_VAL++;
-        // kill(pid, SIGTSTP);
     }
 
     printf("%d ", pid);
@@ -510,8 +507,6 @@ void exec_fore(char *args[])
 
     else if (pid == 0)
     {
-        signal(SIGINT, int_handle);
-        signal(SIGTSTP, tstp_handle);
         if (execvp(args[0], args))
         {
             fprintf(stderr, "Command not found\n");
@@ -531,7 +526,6 @@ void exec_fore(char *args[])
             FORE_BACK[pid] = 1;
             JOB_PID[JOB_VAL] = pid;
             JOB_VAL++;
-            // kill(pid, SIGTSTP);
         }
     }
 }
@@ -744,7 +738,6 @@ void fg(char *args[])
         FORE_BACK[pid] = 1;
         JOB_PID[JOB_VAL] = pid;
         JOB_VAL++;
-        // kill(pid, SIGTSTP);
     }
 
     tcsetpgrp(STDIN_FILENO, getpgid(0));

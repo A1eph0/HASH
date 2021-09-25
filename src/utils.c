@@ -11,6 +11,7 @@ extern int JOB_NUM[];
 extern int JOB_VAL;
 extern pid_t JOB_PID[];
 extern int FORE_BACK[];
+extern int PROMPT_FL;
 
 void int_handle()
 {
@@ -24,6 +25,8 @@ void int_handle()
             return;
         }
     }
+    if(PROMPT_FL)
+        prompt();
 }
 
 void tstp_handle()
@@ -36,7 +39,9 @@ void tstp_handle()
             FORE_BACK[JOB_PID[i]] = 1;
             return;
         }
-    }  
+    }
+    if(PROMPT_FL)
+        prompt();  
 }
 
 // clears the screen
@@ -303,6 +308,7 @@ void exec_command(char *command_string)
 // dispatches the function calls for the commands
 void dispatch(char *command, char *args[])
 {
+    PROMPT_FL = 0;
     if (strcmp(command, "clear") == 0)
         clear();
     else if (strcmp(command, "exit") == 0 || strcmp(command, "quit") == 0)
