@@ -673,7 +673,7 @@ void sig(char *args[])
 {
     if(args[0] == NULL || args[1] == NULL || atoi(args[0]) >= JOB_VAL || atoi(args[1]) > 28)
     {
-        fprintf(stderr, "Invalid inpu\n");
+        fprintf(stderr, "Invalid input\n");
         return;
     }
 
