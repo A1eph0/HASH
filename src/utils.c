@@ -571,3 +571,15 @@ void handle_pipes(char* raw_string)
     dup2(backup_stdin, STDIN_FILENO);
     free(processed_string);
 }
+
+void killall()
+{
+    for(pid_t i=0; i<MAX_PID; i++)
+    {
+        // fprintf(stderr, "%d %d", i, proc_count);
+        if(PROC_NAME[i]!=NULL)
+        {
+            kill(i, SIGKILL);
+        }
+    }
+}

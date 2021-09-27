@@ -45,5 +45,7 @@ signed main()
             break;
     }
 
+    killall();
+
     free(START_LOC);
 }

@@ -19,5 +19,6 @@ void handle_redirection(char *command, char *args[],\
                          int i_flag, int o_flag,\
                           char* i_file, char* o_file);
 void handle_pipes(char* raw_string);
+void killall();
 
 #endif
