@@ -142,8 +142,8 @@ void call_command(char *raw_string)
     }
     
     for (i = 0; i < command_count; i++)
-        // handle_pipes(command[i]);
-        exec_command(command[i]);
+        handle_pipes(command[i]);
+        // exec_command(command[i]);
     
     free(processed_string);
 }
@@ -494,10 +494,13 @@ void handle_redirection(char *command, char *args[], int i_flag, int o_flag, cha
 void handle_pipes(char* raw_string)
 {
     char *processed_string = malloc(MAX_COMMAND);
-    int backup_stdout = dup(STDOUT_FILENO), backup_stdin = dup(STDIN_FILENO);
-    int command_count = process_raw_string(raw_string, processed_string, '|') + 1;
+    char raw_temp[MAX_COMMAND] = "";
+    strcpy(raw_temp, raw_string);
+    strcat(raw_temp, "\n");
+
+    int command_count = process_raw_string(raw_temp, processed_string, '|');
     
-    fprintf(stderr,"%d %s\n", command_count, processed_string);
+    fprintf(stderr,"%d %s %s\n", command_count, processed_string, raw_string);
 
     if(command_count == 1)
     {
@@ -519,11 +522,13 @@ void handle_pipes(char* raw_string)
         token = strtok(NULL, "|");
     }
 
-    int file_desc[2 * (command_count-1)];
+    int backup_stdout = dup(STDOUT_FILENO);
+    int backup_stdin = dup(STDIN_FILENO);
+    int file_desc[(command_count-1)][2];
 
-    for(int i = 0; i < 2 *(command_count-1); i+=2)
+    for(int i = 0; i <(command_count-1); i+=2)
     {
-        if(pipe(file_desc+i))
+        if(pipe(file_desc[i]))
         {
             perror("");
             free(processed_string);
@@ -534,36 +539,23 @@ void handle_pipes(char* raw_string)
     fprintf(stderr,"command_count: %d\n", command_count);
     for(int i = 0; i < command_count; i++)
     {
-        fflush(stdin);
-        fflush(stdout);
-        pid_t pid = fork();
-        if (pid < 0)
-        {
-            perror("");
-            free(processed_string);
-            return;
-        }
-
-        else if (pid == 0)
-        {
-            if(i != 0)
-            {
-                dup2(file_desc[2*(command_count-1)-1-(2*i-1)], STDIN_FILENO);
-                close(file_desc[2*(command_count-1)-1-(2*i-1)]);
-            }
-            if(i != command_count-1)
-            {
-                dup2(file_desc[2*(command_count-1)-1-(2*i)], STDOUT_FILENO);
-                close(file_desc[2*(command_count-1)-1-(2*i)]);
-            }
+        if (i == 0) {
+            dup2(file_desc[i][1], STDOUT_FILENO);
             exec_command(command[i]);
-            dup2(backup_stdin, STDOUT_FILENO);
-            dup2(backup_stdin, STDIN_FILENO);
+            close(file_desc[i][1]);
         }
-        else
-        {
-            int status;
-            waitpid(pid, &status, WUNTRACED);
+        else if (i == command_count-1) {
+            dup2(backup_stdout, STDOUT_FILENO);
+            dup2(file_desc[i-1][0], STDIN_FILENO);
+            exec_command(command[i]);
+            close(file_desc[i-1][0]);
+        }
+        else {
+            dup2(file_desc[i][1], STDOUT_FILENO);
+            dup2(file_desc[i-1][0], STDIN_FILENO);
+            exec_command(command[i]);
+            close(file_desc[i][1]);
+            close(file_desc[i-1][0]);
         }
     }
         
