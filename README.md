@@ -36,7 +36,7 @@ For instructions running the shell, click [here](#running-the-shell).
 
 # Salient Features
 - The shell is coded from scratch using **C language**.
-- The shell has a **built-in parser** which processes the input, taking into account extra spaces and tabs, semi-colons, ampersand etc.
+- The shell has a **built-in parser** which processes the input, taking into account extra spaces and tabs, semi-colons, ampersand etc. The same parser is used to parse pipes as well.
 - Has a **colorised** prompt for better user experience.
 - The prompt is of the form `<username@hostname:current_working_directory>`.
 - `current_working_directory` is **relative to the execution location of the shell**, if it is below the execution location in the file tree. Otherwise, it shows the **absolute path** of the current working directory. 
@@ -50,8 +50,15 @@ For instructions running the shell, click [here](#running-the-shell).
   - `history`
   - `pinfo`
   - `repeat`
+  - `jobs`
+  - `sig`
+  - `fg`
+  - `bg`
+  - `replay`
 - Commands that are not builtin are executed using `execvp()` function.
 - All commands accept paths in **relative to current working directory**, **relative to invocation location** (`~`) and **absolute** forms.
+- Handles both piping and redirection, as well as combinations of both.
+- Handles `SIGINT` (Ctrl+C), `SIGTSTP` (Ctrl+D) and `EOF` (Ctrl+D) in a manner similar to that by other shells like zsh or bash.
 
 # Functionalities
 In this section, we will explore the functionalities implemented in the shell in detail.
@@ -59,11 +66,27 @@ In this section, we will explore the functionalities implemented in the shell in
 ## Input and Parser
 - `getline()` function is used to take raw input.
 - Parser processses the input into a proccessed string, which consists of valid commands separated by the delimiter `;`.
-- Each of these commands are tokenised using `strtok()` and sent ahead for execution.
+- Each of these commands are tokenised using `strtok()` and sent ahead to `handle_pipes()` to check for piping, pre-execution.
 
-## Execution and Dispatcher
+## Piping
+- The parser is used to count the total number of commands and thus, the total number of pipes.
+- In case the total number of commands is 1 (ie: number of pipes are 0), the command is sent ahead for dispatch. Otherwise, it is sent ahead to handle piping.
+- Piping is done using a 2-dimensional array `int file_desc[command_count-1][0]`.
+- If the first command is being run, then then it's `STDOUT_FILENO` is set to `file_desc[0][1]`.
+- For every subsequent command till the last command, if the index of the command is `i`, then `STDOUT_FILENO` is set to `file_desc[i][1]` and `STDIN_FILENO` is set to `file_desc[i-1][0]`.
+- For the last command,`STDIN_FILENO` is set to `file_desc[i-1][0]` and `STDOUT_FILENO` is reset.
+- After necessary piping step, each of the command is executed.
+- After all the commands are executed, both `STDOUT_FILENO` and `STDIN_FILENO` are reset.
+
+## Execution and Redirection
 - The command is tokenised and stored `char *command` and `char *args[]`, where `command` contains the command to be executed and `args[]` contain all the arguments.
-- This is sent to the dispatcher, which dispatches it to corresponding built-in function.
+- During tokenisation, redirection is identified, if any. Necessary flags are set and the location of input and output files are stored.
+- If there is no redirection, both `command` and `args` are sent to the dispatcher, which dispatches it to corresponding built-in function.
+- If there is redirection, then the `STDIN_FILENO` and `STDOUT_FILENO` are set accordingly to the input and output files respectively, and then `command` and `args` are sent to the dispatcher.
+- Both `STDOUT_FILENO` and `STDIN_FILENO` are reset, once the command is executed.
+
+## Dispatcher 
+- The dispatcher dispatches a command to corresponding built-in function.
 - In case ths command is not built-in, it is dispatched to `void other_command(char *command, char *args[])`.
 - From here, the command is sent to `void exec_back(char *args[])` or `void exec_fore(char *args[])` depending whether the last argument is `&` or not.
 
