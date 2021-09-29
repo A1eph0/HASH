@@ -13,9 +13,12 @@ extern pid_t JOB_PID[];
 extern int FORE_BACK[];
 extern int PROMPT_FL;
 
+// handler for SIGINT (Ctrl+C)
 void int_handle()
 {
     write(STDOUT_FILENO, "\n", 1);
+
+    // reset values
     for(int i =1; i < JOB_VAL; i++)
     {
         if(JOB_PID[i] != -1 && FORE_BACK[JOB_PID[i]] == 0)
@@ -25,13 +28,18 @@ void int_handle()
             return;
         }
     }
+
+    // if called without process, print prompt
     if(PROMPT_FL)
         prompt();
 }
 
+// handler for SIGSTP (Ctrl+Z)
 void tstp_handle()
 {
     write(STDOUT_FILENO, "\n", 1);
+
+    // reset values 
     for(int i =1; i < JOB_VAL; i++)
     {
         if(JOB_PID[i] != -1 && FORE_BACK[JOB_PID[i]] == 0)
@@ -40,6 +48,8 @@ void tstp_handle()
             return;
         }
     }
+
+    // if called without process, print prompt
     if(PROMPT_FL)
         prompt();  
 }
@@ -239,8 +249,8 @@ int process_raw_string(char *raw_string, char* processed_string, char delim)
 void exec_command(char *command_string)
 {
     int i_flag = 0, o_flag = 0;
-    char i_file[MAX_LOC] = "";
-    char o_file[MAX_LOC] = "";
+    char i_file[MAX_LOC] = "";       // storing input file location
+    char o_file[MAX_LOC] = "";       // storing output file location
 
     char *token;
     token = strtok(command_string, " ");
@@ -251,6 +261,7 @@ void exec_command(char *command_string)
     token = strtok(NULL, " ");
 
     int i = 0;
+    // handling redirection symbols in input (<, >>, >)
     while(token != NULL && i < MAX_ARG)
     {
         if(i_flag == 0 && strcmp(token, "<") == 0)
@@ -297,19 +308,10 @@ void exec_command(char *command_string)
             i++;
         }
     }
-    i =0;
-    while(args[i]!=NULL)
-    {
-        fprintf(stderr, "args[%d]: %s \t", i, args[i]);
-        i++;
-    }
-    fprintf(stderr, "in_file: %s \t out_file: %s \t in: %d \t out: %d\n", i_file, o_file, i_flag, o_flag);
-
+    
+    // handle dispatch according to whether redirection is needed
     if(i_flag == 0 && o_flag == 0)
-    {
-        fprintf(stderr, "test: \n");
         dispatch(command, args);
-    }
     else
         handle_redirection(command, args, i_flag, o_flag, i_file, o_file);
 }
@@ -446,13 +448,12 @@ void add_history(char *command)
     fclose(hist_file);
 }
 
+// handles redirection
 void handle_redirection(char *command, char *args[], int i_flag, int o_flag, char* i_file, char* o_file)
 {
     int backup_stdout, backup_stdin;
     int i_pointer, o_pointer;
 
-    fprintf(stderr, "Here: %s\t%d\t%d\t%s\t%s\n",command, i_flag, o_flag, i_file, o_file);
-    
     if (i_flag)
     {   
         backup_stdin = dup(STDIN_FILENO);
@@ -504,6 +505,7 @@ void handle_redirection(char *command, char *args[], int i_flag, int o_flag, cha
     }
 }
 
+// handles pipes (if any)
 void handle_pipes(char* raw_string)
 {
     char *processed_string = malloc(MAX_COMMAND);
@@ -512,8 +514,6 @@ void handle_pipes(char* raw_string)
     strcat(raw_temp, "\n");
 
     int command_count = process_raw_string(raw_temp, processed_string, '|');
-    
-    fprintf(stderr,"%d %s %s\n", command_count, processed_string, raw_string);
 
     if(command_count == 1)
     {
@@ -537,6 +537,8 @@ void handle_pipes(char* raw_string)
 
     int backup_stdout = dup(STDOUT_FILENO);
     int backup_stdin = dup(STDIN_FILENO);
+
+    // intiating array of file descriptors for piping
     int file_desc[(command_count-1)][2];
 
     for(int i = 0; i <(command_count-1); i++)
@@ -549,16 +551,16 @@ void handle_pipes(char* raw_string)
         }
     }
 
-    fprintf(stderr,"command_count: %d\n", command_count);
     for(int i = 0; i < command_count; i++)
     {
-        fprintf(stderr,"Command: %s\n", command[i]);
+        // if it is the first command
         if (i == 0) 
         {
             dup2(file_desc[i][1], STDOUT_FILENO);
             exec_command(command[i]);
             close(file_desc[i][1]);
         }
+        // if it is the last command
         else if (i == command_count-1) 
         {
             dup2(backup_stdout, STDOUT_FILENO);
@@ -566,6 +568,7 @@ void handle_pipes(char* raw_string)
             exec_command(command[i]);
             close(file_desc[i-1][0]);
         }
+        // if its neither first or last command
         else 
         {
             dup2(file_desc[i][1], STDOUT_FILENO);
@@ -581,14 +584,10 @@ void handle_pipes(char* raw_string)
     free(processed_string);
 }
 
+// kills all child process for cleanup during exit
 void killall()
 {
     for(pid_t i=0; i<MAX_PID; i++)
-    {
-        // fprintf(stderr, "%d %d", i, proc_count);
         if(PROC_NAME[i]!=NULL)
-        {
             kill(i, SIGKILL);
-        }
-    }
 }

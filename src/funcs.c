@@ -13,6 +13,7 @@ extern pid_t JOB_PID[];
 extern int FORE_BACK[];
 extern int errno;
 
+// comparator for qsort
 int cmp(const void* a, const void* b)
 {
     int pid_a = *(const int *)a;
@@ -497,7 +498,6 @@ void exec_back(char *args[])
 // executes foreground commands
 void exec_fore(char *args[])
 {
-    fprintf(stderr, "STDERROR: %s\n", args[0]);
     signal(SIGCHLD, exit_print);
     pid_t pid = fork();
     if (pid < 0)
@@ -605,9 +605,12 @@ void history(char *args[])
         printf("%s", HIST[i]);
 }
 
+// implementation of jobs command
 void jobs(char *args[])
 {
     int flag = 0;
+
+    // check for flags
     if(args[0]!=NULL)
     {
         if(strcmp(args[0], "-r")==0)
@@ -616,12 +619,11 @@ void jobs(char *args[])
             flag = 2;
     }
 
-    pid_t all_proc[MAX_JOBS];
+    pid_t all_proc[MAX_JOBS];      // array to store all jobs
     
     int proc_count = 0;
     for(pid_t i=0; i<MAX_PID; i++)
     {
-        // fprintf(stderr, "%d %d", i, proc_count);
         if(PROC_NAME[i]!=NULL)
         {
             all_proc[proc_count] = i;
@@ -629,8 +631,10 @@ void jobs(char *args[])
         }
     }
 
+    // sorting the jobs
     qsort(all_proc, proc_count, sizeof(pid_t), cmp);
 
+    // printing the jobs
     for(int i=0; i<proc_count; i++)
     {
         pid_t pid = all_proc[i];
@@ -670,8 +674,10 @@ void jobs(char *args[])
     }
 }
 
+// implementation of sig command
 void sig(char *args[])
 {
+    // check whether given job number is valid
     if(args[0] == NULL || args[1] == NULL || atoi(args[0]) >= JOB_VAL || atoi(args[1]) > 28)
     {
         fprintf(stderr, "Invalid input\n");
@@ -679,6 +685,8 @@ void sig(char *args[])
     }
 
     pid_t pid = JOB_PID[atoi(args[0])];
+
+    // check whether given signal number is valid
     if(pid == -1 || atoi(args[1])>31)
     {
         fprintf(stderr, "Invalid input\n");
@@ -688,8 +696,10 @@ void sig(char *args[])
     kill(pid, atoi(args[1]));
 }
 
+// implementation of bg command
 void bg(char *args[])
 {
+    // check whether given job is valid
     if(args[0] == NULL || atoi(args[0])>=JOB_VAL)
     {
         fprintf(stderr, "Invalid input\n");
@@ -697,6 +707,8 @@ void bg(char *args[])
     }
 
     pid_t pid = JOB_PID[atoi(args[0])];
+
+    // check whether given job has not terminated
     if(pid == -1)
     {
         fprintf(stderr, "Invalid input\n");
@@ -706,29 +718,37 @@ void bg(char *args[])
     kill(pid, SIGCONT);
 }
 
+// implementation of fg command
 void fg(char *args[])
 {
+    // check whether given job is valid
     if(args[0] == NULL || atoi(args[0])>=JOB_VAL)
     {
         fprintf(stderr, "Invalid input\n");
         return;
     }
-
+    
     pid_t pid = JOB_PID[atoi(args[0])];
+
+    // check whether given job has not terminated
     if(pid == -1)
     {
         fprintf(stderr, "Invalid input\n");
         return;
     }
+
+    // save necessary values
     char *process_name = malloc(MAX_ARG);
     strcpy(process_name, PROC_NAME[pid]);
     PROC_NAME[pid] = NULL;
     FORE_BACK[pid] = 0;
     int temp_job = atoi(args[0]);
     
+    // ignore output and input signals
     signal(SIGTTOU, SIG_IGN);
     signal(SIGTTIN, SIG_IGN);
 
+    // set process group id as the same as that of the shell
     tcsetpgrp(STDIN_FILENO, getpgid(pid));
     kill(pid, SIGCONT);
 
@@ -741,12 +761,15 @@ void fg(char *args[])
         JOB_PID[temp_job] = pid;
     }
 
+    // set process group id to 0,0;
     tcsetpgrp(STDIN_FILENO, getpgid(0));
 
     signal(SIGTTOU, SIG_DFL);
     signal(SIGTTIN, SIG_DFL);
+    // set the input output signals to default
 }
 
+// implementation of replay command
 void replay(char *args[])
 {
     char *command[MAX_COMMAND] = {NULL};
@@ -758,6 +781,7 @@ void replay(char *args[])
     int period_flag = 0;
     int j=0;
 
+    // checking whether all of command, interval and period have been provided
     for(int i =0; args[i]!=NULL; i++)
     {
         if(strcmp(args[i], "-command") == 0 && command_flag == 0)
@@ -795,14 +819,18 @@ void replay(char *args[])
         }
     }
 
+    // run command at time t = 0
+    dispatch(command[0], command+1);
+
+    // if interval is greater than period
     if(interval> period)
         return;
     
-    dispatch(command[0], command+1);
-    clock_t start = clock();
-    clock_t keep = start;
+    clock_t start = clock();    // stores start time
+    clock_t keep = start;       // stores time since last operation
     while(((double)(clock() - start)/CLOCKS_PER_SEC) - (double) (period - interval) < -0.0005)
     {
+        // if period is reached
         if(((double)(clock() - keep)/CLOCKS_PER_SEC) - (double) interval < 0.0005 && ((double)(clock() - keep)/CLOCKS_PER_SEC) - (double) interval > -0000.5)
         {
             dispatch(command[0], command+1);

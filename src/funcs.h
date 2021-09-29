@@ -14,10 +14,10 @@ void exec_back(char *args[]);       // executes background commands
 void exec_fore(char *args[]);       // executes foreground commands
 void pinfo(char *args[]);           // implementation of pinfo command
 void history(char *args[]);         // implementation of history command
-void jobs(char *args[]);
-void sig(char *args[]);
-void bg(char *args[]);
-void fg(char *args[]);
-void replay(char *args[]);
+void jobs(char *args[]);            // implementation of jobs command
+void sig(char *args[]);             // implementation of sig command
+void bg(char *args[]);              // implementation of bg command
+void fg(char *args[]);              // implementation of fg command
+void replay(char *args[]);          // implementation of replay command
 
 #endif

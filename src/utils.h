@@ -1,8 +1,8 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-void int_handle();
-void tstp_handle();
+void int_handle();                                                                  // handler for SIGINT (Ctrl+C)
+void tstp_handle();                                                                 // handler for SIGSTP (Ctrl+Z)
 void clear();                                                                       // clears the screen
 void prompt();                                                                      // prints the prompt string
 void relative_path(char *path);                                                     // given a path, generates path relative to the starting location
@@ -17,8 +17,8 @@ void get_history();                                                             
 void add_history(char *command);                                                    // writes content to history file (~/.hash_history)
 void handle_redirection(char *command, char *args[],\
                          int i_flag, int o_flag,\
-                          char* i_file, char* o_file);
-void handle_pipes(char* raw_string);
-void killall();
+                          char* i_file, char* o_file);                              // handles redirection
+void handle_pipes(char* raw_string);                                                // handles pipes (if any)
+void killall();                                                                     // kills all child process for cleanup during exit
 
 #endif
