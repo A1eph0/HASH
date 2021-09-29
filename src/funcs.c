@@ -723,7 +723,8 @@ void fg(char *args[])
     strcpy(process_name, PROC_NAME[pid]);
     PROC_NAME[pid] = NULL;
     FORE_BACK[pid] = 0;
-
+    int temp_job = atoi(args[0]);
+    
     signal(SIGTTOU, SIG_IGN);
     signal(SIGTTIN, SIG_IGN);
 
@@ -734,10 +735,9 @@ void fg(char *args[])
     if(waitpid(pid, &status, WUNTRACED) > 0 && WIFSTOPPED(status) != 0)
     {
         PROC_NAME[pid] = process_name;
-        JOB_NUM[pid] = JOB_VAL;
+        JOB_NUM[pid] = temp_job;
         FORE_BACK[pid] = 1;
-        JOB_PID[JOB_VAL] = pid;
-        JOB_VAL++;
+        JOB_PID[temp_job] = pid;
     }
 
     tcsetpgrp(STDIN_FILENO, getpgid(0));
