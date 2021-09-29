@@ -258,33 +258,18 @@ void exec_command(char *command_string)
             i_flag = 1;
             token = strtok(NULL, " ");
 
-            if( token == NULL || strcmp(token, ">") == 0 || strcmp(token, ">>") == 0)
+            if(token[0] == '~')
             {
-                i++;
-                continue;
+                strcpy(i_file, START_LOC);
+                token++;
             }
-            else
-            {
-                if(token[0] == '~')
-                {
-                    strcpy(i_file, START_LOC);
-                    token++;
-                }
-                strcat(i_file, token);
-                i++;
-            }
+            strcat(i_file, token);
+            token = strtok(NULL, " ");
         }
         else if(strcmp(token, ">") == 0)
+        {
             o_flag = 1;
-        else if(strcmp(token, ">>") == 0)
-            o_flag = 2;
-        else   
-            args[i] = token;
-
-        token = strtok(NULL, " ");
-
-        if(token != NULL && o_flag != 0)
-        {   
+            token = strtok(NULL, " ");
             if(token[0] == '~')
             {
                 strcpy(o_file, START_LOC);
@@ -293,14 +278,38 @@ void exec_command(char *command_string)
             strcat(o_file, token);
             break;
         }
-
+        else if(strcmp(token, ">>") == 0)
+        {
+            o_flag = 2;
+            token = strtok(NULL, " ");
+            if(token[0] == '~')
+            {
+                strcpy(o_file, START_LOC);
+                token++;
+            }
+            strcat(o_file, token);
+            break;
+        }
+        else
+        {   
+            args[i] = token;
+            token = strtok(NULL, " ");
+            i++;
+        }
+    }
+    i =0;
+    while(args[i]!=NULL)
+    {
+        fprintf(stderr, "args[%d]: %s \t", i, args[i]);
         i++;
     }
-
-    // printf("out_file: %s \t in_file: %s \t in: %d \t out: %d\n", o_file, i_file, i_flag, o_flag);
+    fprintf(stderr, "in_file: %s \t out_file: %s \t in: %d \t out: %d\n", i_file, o_file, i_flag, o_flag);
 
     if(i_flag == 0 && o_flag == 0)
+    {
+        fprintf(stderr, "test: \n");
         dispatch(command, args);
+    }
     else
         handle_redirection(command, args, i_flag, o_flag, i_file, o_file);
 }
@@ -439,13 +448,14 @@ void add_history(char *command)
 
 void handle_redirection(char *command, char *args[], int i_flag, int o_flag, char* i_file, char* o_file)
 {
-    int backup_stdout = dup(STDOUT_FILENO), backup_stdin = dup(STDIN_FILENO);
+    int backup_stdout, backup_stdin;
     int i_pointer, o_pointer;
 
-    // printf("%s\t%d\t%d\t%s\t%s\n",command, i_flag, o_flag, i_file, o_file);
+    fprintf(stderr, "Here: %s\t%d\t%d\t%s\t%s\n",command, i_flag, o_flag, i_file, o_file);
     
     if (i_flag)
-    {
+    {   
+        backup_stdin = dup(STDIN_FILENO);
         i_pointer = open(i_file, O_RDONLY);
         if (i_pointer < 0)
         {
@@ -454,7 +464,6 @@ void handle_redirection(char *command, char *args[], int i_flag, int o_flag, cha
         }
         if (dup2(i_pointer, STDIN_FILENO) == -1)
         {
-            dup2(backup_stdin, STDIN_FILENO);
             perror("");
             return;
         }
@@ -462,6 +471,7 @@ void handle_redirection(char *command, char *args[], int i_flag, int o_flag, cha
 
     if (o_flag)
     {
+        backup_stdout = dup(STDOUT_FILENO);
         int app_trunc_flag = O_TRUNC;
         
         if(o_flag == 2)
@@ -482,13 +492,16 @@ void handle_redirection(char *command, char *args[], int i_flag, int o_flag, cha
 
     dispatch(command, args);
     
-    if(i_flag)
+    if(i_flag != 0)
+    {
         close(i_pointer);
-    if(o_file)
+        dup2(backup_stdin, STDIN_FILENO);
+    }
+    if(o_flag != 0)
+    {
         close(o_pointer);
-
-    dup2(backup_stdin, STDIN_FILENO);
-    dup2(backup_stdout, STDOUT_FILENO);
+        dup2(backup_stdout, STDOUT_FILENO);
+    }
 }
 
 void handle_pipes(char* raw_string)
@@ -526,7 +539,7 @@ void handle_pipes(char* raw_string)
     int backup_stdin = dup(STDIN_FILENO);
     int file_desc[(command_count-1)][2];
 
-    for(int i = 0; i <(command_count-1); i+=2)
+    for(int i = 0; i <(command_count-1); i++)
     {
         if(pipe(file_desc[i]))
         {
@@ -539,18 +552,22 @@ void handle_pipes(char* raw_string)
     fprintf(stderr,"command_count: %d\n", command_count);
     for(int i = 0; i < command_count; i++)
     {
-        if (i == 0) {
+        fprintf(stderr,"Command: %s\n", command[i]);
+        if (i == 0) 
+        {
             dup2(file_desc[i][1], STDOUT_FILENO);
             exec_command(command[i]);
             close(file_desc[i][1]);
         }
-        else if (i == command_count-1) {
+        else if (i == command_count-1) 
+        {
             dup2(backup_stdout, STDOUT_FILENO);
             dup2(file_desc[i-1][0], STDIN_FILENO);
             exec_command(command[i]);
             close(file_desc[i-1][0]);
         }
-        else {
+        else 
+        {
             dup2(file_desc[i][1], STDOUT_FILENO);
             dup2(file_desc[i-1][0], STDIN_FILENO);
             exec_command(command[i]);
@@ -559,7 +576,7 @@ void handle_pipes(char* raw_string)
         }
     }
         
-    dup2(backup_stdin, STDOUT_FILENO);
+    dup2(backup_stdout, STDOUT_FILENO);
     dup2(backup_stdin, STDIN_FILENO);
     free(processed_string);
 }

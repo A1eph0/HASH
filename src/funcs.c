@@ -497,6 +497,7 @@ void exec_back(char *args[])
 // executes foreground commands
 void exec_fore(char *args[])
 {
+    fprintf(stderr, "STDERROR: %s\n", args[0]);
     signal(SIGCHLD, exit_print);
     pid_t pid = fork();
     if (pid < 0)
