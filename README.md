@@ -116,14 +116,67 @@ In this section, we will explore the functionalities implemented in the shell in
 - `waitpid()` is used to wait till termination.
 
 ## Background Processes
-- Simalar to Foreground Processes except `waitpid()` is not used.
-- `signal()` is used to watch for the exit signal sent by the process and print the corresponding exit message
+- Similar to Foreground Processes except `waitpid()` is not used.
+- `signal()` is used to watch for the exit signal sent by the process and print the corresponding exit message.
+- `setpgid()` is used to set the process group for background execution.
+
+## Storing Processes
+- Information regarding the processes are stored in multiple one dimensional arrays.
+- The usage of the arrays is similar to that of map.
+- These inlude: 
+  * Map from pid to process name (`char *PROC_NAME[]`)
+  * Map from pid to job number (`int JOB_NUM[]`)
+  * Map from job number to pid (`pid_t JOB_PID[]`)
+  * Map from pid to job foreground/background status (`int FORE_BACK[]`)
+
+## `jobs`
+- The flags are parsed from the input, for corresponding action.
+- All background processes are collected and stored in an array, which is sorted according to alphabetical order of process name, using `qsort()`.
+- Necessary information is obtained from `/proc/pid/stat` and printed accordingly.
+
+## `sig`
+- Input is checked, to ensure validity.
+- Signal is send accordingly, using the `kill()` command.
+
+## `fg`
+- Input is checked, to ensure validity.
+- Input and output signals (`SIGTTIN` and `SIGTTOU`) are set to ignore for the shell.
+- The process of group of the background process is set to same as that of the shell, and `SIGCONT` is sent to it.
+- In case an `SIGTSTP` is recieved, the process is pushed to background again.
+- Process group of the process is set again, and the input and output signals (`SIGTTIN` and `SIGTTOU`) are reset to default.
+
+## `bg`
+- Input is checked, to ensure validity.
+- `SIGCONT` is sent to the process.
+
+## `replay`
+- Parsing is done to ensure that input is valid.
+- Command execute once at time `t=0`.
+- `clock_t start` stores the start time of command execution.
+- `clock_t keep` stores the time since last command execution.
+- Command executes at every interval value in the given period.
+
+## Signal Handling
+- Apart from the implementation of error-message by handling `SIGCHLD`, both `SIGINT` (Ctrl+C) and `SIGTSTP` (Ctrl+Z) has been handled.
+- Signal handling involves some necessary cleaning functions, which clean the process maps accordingly.
+- Pressing Ctrl+Z or Ctrl+C on prompt will result in printing of a newline and printing of a fresh prompt for aesthetic purposes.
+- `PROMPT_FL` flag is used to prevent double printing of prompt.
+
+## `EOF` Handling
+- On recieving `EOF` (Ctrl+D), the shell's loop is broken, using the return value of `-1` from `getline()` command.
+- `killall()` function is called to kill all child process, so that the exit is clean,
 
 # Assumptions 
 - Maximum number of argument `MAX_ARG` for any command will be 100;
 - Maximum input length`MAX_COMMAND` for any command will be `(int) (2 << 15)` .
 - Maximum lenth of path `MAX_LOC` will be 10000.
 - Maximum `pid` value `MAX_PID` will be less than `(int) (2 << 20)`.
+- Maximum number of jobs in a session `MAX_JOBS` will be less than `(int) (100000)`.
+- In replay, the command will execute at time 0 and then every interval in the time. 
+  * In case the period is a multiple of the interval, it will not execute at the last second.
+  *  For example: if the period is 2 and the inteval is 6, the command will execute at time 0, 2 and 4 seconds respectively.
+  *  This implementation ensures that total runtime of the replay is equal to the specified interval.
+- All child processes are killed on exit of shell.
 
 # Running the Shell
 Compile the shell from the parent directory and run the file as shown below:
