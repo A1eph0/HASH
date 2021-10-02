@@ -484,6 +484,13 @@ void exec_back(char *args[])
     {
         char *process_name = malloc(MAX_ARG);
         strcpy(process_name, args[0]);
+        char temp[MAX_ARG]="";
+        for(int i=1; args[i]!=NULL; i++)
+        {
+            strcat(temp, " ");
+            strcat(temp, args[i]);
+        }
+        strcpy(process_name+strlen(process_name)+1, temp);
         PROC_NAME[pid] = process_name;
         JOB_NUM[pid] = JOB_VAL;
         FORE_BACK[pid] = 1;
@@ -522,6 +529,13 @@ void exec_fore(char *args[])
         {
             char *process_name = malloc(MAX_ARG);
             strcpy(process_name, args[0]);
+            char temp[MAX_ARG]="";
+            for(int i=1; args[i]!=NULL; i++)
+            {
+                strcat(temp, " ");
+                strcat(temp, args[i]);
+            }
+            strcpy(process_name+strlen(process_name)+1, temp);
             PROC_NAME[pid] = process_name;
             JOB_NUM[pid] = JOB_VAL;
             FORE_BACK[pid] = 1;
@@ -670,7 +684,7 @@ void jobs(char *args[])
             j++;
         }
 
-        printf("%s [%d]\n", PROC_NAME[pid], pid);
+        printf("%s%s [%d]\n", PROC_NAME[pid], PROC_NAME[pid]+strlen(PROC_NAME[pid])+1, pid);
     }
 }
 
@@ -738,8 +752,7 @@ void fg(char *args[])
     }
 
     // save necessary values
-    char *process_name = malloc(MAX_ARG);
-    strcpy(process_name, PROC_NAME[pid]);
+    char *process_name = PROC_NAME[pid];
     PROC_NAME[pid] = NULL;
     FORE_BACK[pid] = 0;
     int temp_job = atoi(args[0]);
